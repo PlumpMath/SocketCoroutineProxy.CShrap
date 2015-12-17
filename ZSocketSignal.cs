@@ -4,13 +4,15 @@ using System.Collections;
 public class ZSocketSignal {
 	public enum Signals
 	{
-		Connect,
 		ConnectFailed,
 		ConnectSuccessful,
+		Dead,
+
+		Connect,
+		ConnectBlock,
 		Recv,
 		Send,
-		SendBlock,
-		Dead
+		SendBlock
 	}
 
 	public Signals Signal {

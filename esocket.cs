@@ -6,9 +6,22 @@ using System.Collections.Generic;
 using System;
 using System.Threading;
 
+class AsyncAlreadyCompleted : IAsyncResult {
+	private object _state;
+
+	object IAsyncResult.AsyncState { get { return _state; } }
+	bool IAsyncResult.IsCompleted { get { return true; } }
+	WaitHandle IAsyncResult.AsyncWaitHandle { get { return null; } }
+	bool IAsyncResult.CompletedSynchronously { get { return false; } }
+
+	public AsyncAlreadyCompleted (object obj) {
+		this._state = obj;
+	}
+}
+
 public class esocket {
 	private Socket socket;
-	private esocket instance;
+	//private esocket instance;
 
 	public LinkedList<string> datas = new LinkedList<string>();
 
@@ -19,9 +32,9 @@ public class esocket {
 
 	private Thread threadRecv;
 
-	//returned Instance may be not connected, SUCC calls when connected
 	public void Connect(AsyncCallback IFinished) {
-		if (instance == null) {
+		Debug.Log ("esocket start connect");
+		if (socket == null) {
 			CFinished = IFinished;
 			new startTcpWithTimeout ().BeginConnectWithTimeout (ip, port, Finished, 2000);
 		} else {
@@ -30,10 +43,11 @@ public class esocket {
 	}
 
 	void Finished(IAsyncResult iar) {
+		Debug.Log ("esocket end connect");
 		socket = (Socket)(iar.AsyncState);
 
 		if (socket.Connected) {
-			instance = this;
+			//instance = this;
 			if (!threadRecv.IsAlive) {
 				threadRecv = new Thread (new ThreadStart (RecvDaemon));
 				threadRecv.IsBackground = true;
@@ -94,11 +108,6 @@ public class esocket {
 	public esocket(string ip, int port) {
 		this.ip = ip;
 		this.port = port;
-	}
-
-	public esocket() {
-		this.ip = "127.0.0.1";
-		this.port = 8899;
 	}
 }
 // K2aWPlfBqDxpRXq+grS2PljBqDwhntm+/v9/PlXBqDwBAIA+5z3ZvlXBqDy2kj+9

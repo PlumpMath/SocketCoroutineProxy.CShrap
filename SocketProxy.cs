@@ -9,7 +9,7 @@ public class SocketProxy {
 	private bool Sended;
 
 	private IEnumerator ie;
-	//private esocket es;
+	private esocket es;
 	private SocketCallback Callback;
 
 	public delegate void SocketCallback(ZSocketSignal zsc);
@@ -17,7 +17,8 @@ public class SocketProxy {
 	public SocketProxy(IEnumerator ie, SocketCallback Callback) {
 		this.ie = ie;
 		this.Callback = Callback;
-		//this.es = new esocket ();
+
+		this.es = new esocket ("127.0.0.1", 9988);
 	}
 
 	void SendCallback(IAsyncResult iar) {
@@ -25,14 +26,14 @@ public class SocketProxy {
 	}
 
 	void ConnectCallback(IAsyncResult iar) {
-		Socket so = (Socket)iar;
-		ConnectFinished = true;
-		Connected = so.Connected;
+		Socket so = (Socket)iar.AsyncState;
 		if (Connected) {
 			Callback (new ZSocketSignal (ZSocketSignal.Signals.ConnectSuccessful, ""));
 		} else {
 			Callback (new ZSocketSignal (ZSocketSignal.Signals.ConnectFailed, ""));
 		}
+		ConnectFinished = true;
+		Connected = so.Connected;
 	}
 
 	public IEnumerator Proxy() {
@@ -47,7 +48,19 @@ public class SocketProxy {
 				ZSocketSignal Sig = (ZSocketSignal)yielded;
 				switch (Sig.Signal) {
 				case ZSocketSignal.Signals.Connect:
-					
+					if (!Connected) {
+						es.Connect (ConnectCallback);
+					}
+					yield return null;
+					break;
+
+				case ZSocketSignal.Signals.ConnectBlock:
+					if (!Connected) {
+						while (!ConnectFinished) {
+							yield return null;
+						}
+					}
+					yield return null;
 					break;
 
 				case ZSocketSignal.Signals.Recv:

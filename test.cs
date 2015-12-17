@@ -1,26 +1,31 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System;
+using System.Net.Sockets;
 
 public class test : MonoBehaviour {
 	esocket es;
 	// Use this for initialization
 	void Start () {
 		es = new esocket ("127.0.0.1", 9988);
-		es.Connect (ConnectSucc, ConnectFail);
+		es.Connect (ConnectCB);
 	
 		StartCoroutine ("rs");
 		StartCoroutine ("ts");
 	}
 
-	void ConnectSucc(IAsyncResult iar) {
-		Debug.Log ("ConnectSucc called");
-	}
+	void ConnectCB(IAsyncResult iar) {
+		Debug.Log("test : Connect finished");
 
-	void ConnectFail(IAsyncResult iar) {
-		Debug.Log ("ConnectFail called");
-	}
+		Socket so = (Socket)iar.AsyncState;
 
+		if (so.Connected) {
+			Debug.Log ("ConnectSucc called");
+		} else {
+			Debug.Log ("ConnectFailed called");
+		}
+	}
+		
 	byte[] GetBytes(Vector3 v3) {
 		byte[] bs = new byte[12];
 		BitConverter.GetBytes (v3.x).CopyTo(bs, 0);
