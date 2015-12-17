@@ -21,34 +21,39 @@ class AsyncAlreadyCompleted : IAsyncResult {
 
 public class esocket {
 	private Socket socket;
-	//private esocket instance;
 
 	public LinkedList<string> datas = new LinkedList<string>();
 
 	AsyncCallback CFinished;
+
+	public ZSocketSignal task, complete;
 
 	private string ip;
 	private int port;
 
 	private Thread threadRecv;
 
-	public void Connect(AsyncCallback IFinished) {
+	public IAsyncResult BeginConnect(AsyncCallback IFinished) {
 		Debug.Log ("esocket start connect");
 		if (socket == null) {
 			CFinished = IFinished;
-			new startTcpWithTimeout ().BeginConnectWithTimeout (ip, port, Finished, 2000);
-		} else {
-			CFinished (new AsyncAlreadyCompleted (socket));
+			return new startTcpWithTimeout ().BeginConnectWithTimeout (ip, port, Finished, 2000);
 		}
+		AsyncAlreadyCompleted result = new AsyncAlreadyCompleted (socket);
+		CFinished (result);
+		return result;
 	}
 
 	void Finished(IAsyncResult iar) {
 		Debug.Log ("esocket end connect");
-		socket = (Socket)(iar.AsyncState);
+		Socket socket = (Socket)(iar.AsyncState);
+
+		Debug.Log ("esocket end connect, state: " + iar.AsyncState);
+		Debug.Log ("esocket end connect, result: " + socket.Connected);
 
 		if (socket.Connected) {
-			//instance = this;
-			if (!threadRecv.IsAlive) {
+			this.socket = socket;
+			if (threadRecv == null || !threadRecv.IsAlive) {
 				threadRecv = new Thread (new ThreadStart (RecvDaemon));
 				threadRecv.IsBackground = true;
 				threadRecv.Start ();
@@ -79,6 +84,7 @@ public class esocket {
 	}
 
 	void RecvDaemon() {
+		Debug.Log ("start recv daemon");
 		string tmp = "";
 		byte[] buffer = new byte[10];
 	
@@ -99,7 +105,7 @@ public class esocket {
 					datas.AddLast (tmp);
 				}
 				//OnRecv
-				Debug.Log(tmp);
+				//Debug.Log(tmp);
 				tmp = "";
 			}
 		}

@@ -4,14 +4,16 @@ using System;
 using System.Net.Sockets;
 
 public class test : MonoBehaviour {
-	esocket es;
+	//esocket es;
 	// Use this for initialization
 	void Start () {
-		es = new esocket ("127.0.0.1", 9988);
-		es.Connect (ConnectCB);
+		esocket es = new esocket ("127.0.0.1", 9988);
+
+		//SocketProxy spt = new SocketProxy (ts (), es);
+		SocketProxy spr = new SocketProxy (rs (), es);
 	
-		StartCoroutine ("rs");
-		StartCoroutine ("ts");
+		//StartCoroutine (spt.Proxy());
+		StartCoroutine (spr.Proxy());
 	}
 
 	void ConnectCB(IAsyncResult iar) {
@@ -69,33 +71,20 @@ public class test : MonoBehaviour {
 
 	IEnumerator rs() {
 		while (true) {
-			bool esDatasWithNull = true;
+			ZSocketSignal signal = new ZSocketSignal (ZSocketSignal.Signals.Recv);
 
-			//Debug.Log (es.datas.Count);
+			yield return signal;
 
-			lock (es.datas) {
-				if (es.datas.Count > 0) {
-					esDatasWithNull = false;
+			Debug.Log (signal.Signal);
+
+			if (signal.Signal == ZSocketSignal.Signals.RecvSuccessful) {
+				string[] ds = signal.Parse ();
+
+				if (ds [0] == "SYNC") {
+					SetPostionByBase64 (ds [1]);
 				}
-			}
-			if (esDatasWithNull) {
-				yield return null;
-			} else {
-				lock (es.datas) {
-					Debug.Log ("ts : " + es.datas.First.Value);
-					string data = es.datas.First.Value;
-					es.datas.RemoveFirst ();
 
-					string[] ds = data.Split (new string[] { " " }, StringSplitOptions.None);
-
-					if (ds [0] == "SYNC") {
-						SetPostionByBase64 (ds [1]);
-					}
-
-					Debug.Log (ds [0]);
-					
-					Debug.Log (es.datas.Count);
-				}
+				Debug.Log ("test Cmd: " + ds [0]);
 			}
 		}
 	}

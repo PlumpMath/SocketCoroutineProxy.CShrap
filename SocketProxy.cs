@@ -3,22 +3,31 @@ using System.Collections;
 using System;
 using System.Net.Sockets;
 
+// scripts access esocket coroutinely via this script
 public class SocketProxy {
 	private bool Connected;
-	private bool ConnectFinished;
+	private bool Connecting;
 	private bool Sended;
 
 	private IEnumerator ie;
-	private esocket es;
-	private SocketCallback Callback;
+	public  esocket es;
+	//private SocketCallback Callback;
 
 	public delegate void SocketCallback(ZSocketSignal zsc);
 
+	/*
 	public SocketProxy(IEnumerator ie, SocketCallback Callback) {
 		this.ie = ie;
 		this.Callback = Callback;
 
 		this.es = new esocket ("127.0.0.1", 9988);
+	}
+	*/
+
+	public SocketProxy(IEnumerator ie, /*SocketCallback Callback, */esocket es) {
+		this.ie = ie;
+		//this.Callback = Callback;
+		this.es = es;
 	}
 
 	void SendCallback(IAsyncResult iar) {
@@ -27,13 +36,22 @@ public class SocketProxy {
 
 	void ConnectCallback(IAsyncResult iar) {
 		Socket so = (Socket)iar.AsyncState;
+		/*
 		if (Connected) {
 			Callback (new ZSocketSignal (ZSocketSignal.Signals.ConnectSuccessful, ""));
 		} else {
 			Callback (new ZSocketSignal (ZSocketSignal.Signals.ConnectFailed, ""));
 		}
-		ConnectFinished = true;
+		*/
+		Connecting = false;
 		Connected = so.Connected;
+	}
+
+	void Connect() {
+		if (!Connected && !Connecting) {
+			Connecting = true;
+			es.BeginConnect (ConnectCallback);
+		}
 	}
 
 	public IEnumerator Proxy() {
@@ -47,23 +65,34 @@ public class SocketProxy {
 			if (yielded != null && yielded.GetType () == typeof(ZSocketSignal)) {
 				ZSocketSignal Sig = (ZSocketSignal)yielded;
 				switch (Sig.Signal) {
+
+				//this should not be called. Connect should always blocked
 				case ZSocketSignal.Signals.Connect:
-					if (!Connected) {
-						es.Connect (ConnectCallback);
-					}
+					Connect ();
 					yield return null;
 					break;
 
-				case ZSocketSignal.Signals.ConnectBlock:
-					if (!Connected) {
-						while (!ConnectFinished) {
-							yield return null;
-						}
-					}
-					yield return null;
-					break;
-
+				case ZSocketSignal.Signals.ConnectBlock: 
 				case ZSocketSignal.Signals.Recv:
+					Connect ();
+					do {
+						yield return null;
+					} while (Connecting);
+
+					if (Sig.Signal == ZSocketSignal.Signals.ConnectBlock) {
+						if (Connected) {
+							Sig.Update (ZSocketSignal.Signals.ConnectSuccessful);
+						} else {
+							Sig.Update (ZSocketSignal.Signals.ConnectFailed);
+						}
+						break;
+					}
+
+					if (!Connected) {
+						Sig.Update (ZSocketSignal.Signals.RecvFailed);
+						break;
+					}
+
 					while (true) {
 						bool esDatasWithNull = true;
 
@@ -78,7 +107,8 @@ public class SocketProxy {
 							lock (es.datas) {
 								string data = es.datas.First.Value;
 								es.datas.RemoveFirst ();
-								Callback (new ZSocketSignal (ZSocketSignal.Signals.Recv, data));
+								Sig.Update (ZSocketSignal.Signals.RecvSuccessful, data);
+								//Callback (new ZSocketSignal (ZSocketSignal.Signals.Recv, data));
 							}
 							break;
 						}
@@ -98,6 +128,8 @@ public class SocketProxy {
 					}
 					break;
 				}
+			} else {
+				yield return yielded;
 			}
 		}
 	}

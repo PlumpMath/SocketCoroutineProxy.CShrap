@@ -1,11 +1,14 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System;
 
 public class ZSocketSignal {
 	public enum Signals
 	{
 		ConnectFailed,
 		ConnectSuccessful,
+		RecvSuccessful,
+		RecvFailed,
 		Dead,
 
 		Connect,
@@ -30,6 +33,21 @@ public class ZSocketSignal {
 	private string realValue;
 	private Signals realSignal;
 
+	public void Update(Signals sig) {
+		realSignal = sig;
+		realValue = "";
+	}
+
+	public void Update(Signals sig, string val) {
+		realSignal = sig;
+		realValue = val;
+	}
+
+	public ZSocketSignal(Signals sig) {
+		realSignal = sig;
+		realValue = "";
+	}
+
 	public ZSocketSignal(Signals sig, string cmd) {
 		realSignal = sig;
 		realValue = cmd;
@@ -51,5 +69,9 @@ public class ZSocketSignal {
 		foreach (string arg in args) {
 			realValue += " " + arg;
 		}
+	}
+
+	public string[] Parse() {
+		return realValue.Split (new string[] { " " }, StringSplitOptions.None);
 	}
 }
