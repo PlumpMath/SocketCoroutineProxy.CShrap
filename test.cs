@@ -15,18 +15,6 @@ public class test : MonoBehaviour {
 		//StartCoroutine (spt.Proxy());
 		StartCoroutine (spr.Proxy());
 	}
-
-	void ConnectCB(IAsyncResult iar) {
-		Debug.Log("test : Connect finished");
-
-		Socket so = (Socket)iar.AsyncState;
-
-		if (so.Connected) {
-			Debug.Log ("ConnectSucc called");
-		} else {
-			Debug.Log ("ConnectFailed called");
-		}
-	}
 		
 	byte[] GetBytes(Vector3 v3) {
 		byte[] bs = new byte[12];
@@ -69,24 +57,29 @@ public class test : MonoBehaviour {
 		}
 	}
 
+	public bool meIsL;
+
 	IEnumerator rs() {
-		while (true) {
-			ZSocketSignal signal = new ZSocketSignal (ZSocketSignal.Signals.Recv);
+		ZSocketSignal s = new ZSocketSignal (ZSocketSignal.Signals.Recv);
+C_wait_game_start:
+		do {
+			s = new ZSocketSignal (ZSocketSignal.Signals.Recv);
 
-			yield return signal;
+			yield return s;
 
-			Debug.Log (signal.Signal);
+			if (s.Signal != ZSocketSignal.Signals.RecvSuccessful)
+				continue;
+			string[] ds = s.Parse ();
+			Debug.Log("test: " + s.Value + " length is " + s.Value.Length);
+			if (ds [0] != "GAMESTART")
+				continue;
 
-			if (signal.Signal == ZSocketSignal.Signals.RecvSuccessful) {
-				string[] ds = signal.Parse ();
+			meIsL = (ds[1] == "L");
 
-				if (ds [0] == "SYNC") {
-					SetPostionByBase64 (ds [1]);
-				}
+		} while (true);
 
-				Debug.Log ("test Cmd: " + ds [0]);
-			}
-		}
+
+			
 	}
 	
 	// Update is called once per frame

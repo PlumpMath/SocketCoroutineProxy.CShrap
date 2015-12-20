@@ -9,6 +9,8 @@ public class ZSocketSignal {
 		ConnectSuccessful,
 		RecvSuccessful,
 		RecvFailed,
+		SendSuccessful,
+		SendFailed,
 		Dead,
 
 		Connect,

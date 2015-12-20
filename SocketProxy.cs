@@ -4,6 +4,8 @@ using System;
 using System.Net.Sockets;
 
 // scripts access esocket coroutinely via this script
+// proxy socket from async to coroutine
+// not muti thread safe
 public class SocketProxy {
 	private bool Connected;
 	private bool Connecting;
@@ -64,30 +66,37 @@ public class SocketProxy {
 
 			if (yielded != null && yielded.GetType () == typeof(ZSocketSignal)) {
 				ZSocketSignal Sig = (ZSocketSignal)yielded;
+
+				//this should only use for heart beat
+				if (Sig.Signal == ZSocketSignal.Signals.Send) {
+					es.Send (Sig.Value);
+					yield return null;
+					continue;
+				}
+
+				//else all method should check connection
+				Connect ();
+				do {
+					yield return null;
+				} while (Connecting);
+
 				switch (Sig.Signal) {
 
 				//this should not be called. Connect should always blocked
-				case ZSocketSignal.Signals.Connect:
-					Connect ();
-					yield return null;
+				//case ZSocketSignal.Signals.Connect:
+				//	Connect ();
+				//	yield return null;
+				//	break;
+					
+				case ZSocketSignal.Signals.ConnectBlock:
+					if (Connected) {
+						Sig.Update (ZSocketSignal.Signals.ConnectSuccessful);
+					} else {
+						Sig.Update (ZSocketSignal.Signals.ConnectFailed);
+					}
 					break;
 
-				case ZSocketSignal.Signals.ConnectBlock: 
 				case ZSocketSignal.Signals.Recv:
-					Connect ();
-					do {
-						yield return null;
-					} while (Connecting);
-
-					if (Sig.Signal == ZSocketSignal.Signals.ConnectBlock) {
-						if (Connected) {
-							Sig.Update (ZSocketSignal.Signals.ConnectSuccessful);
-						} else {
-							Sig.Update (ZSocketSignal.Signals.ConnectFailed);
-						}
-						break;
-					}
-
 					if (!Connected) {
 						Sig.Update (ZSocketSignal.Signals.RecvFailed);
 						break;
@@ -95,7 +104,7 @@ public class SocketProxy {
 
 					while (true) {
 						bool esDatasWithNull = true;
-
+						//Debug.Log ("socketproxy Signals.Recv es.datas.Count " + es.datas.Count);
 						lock (es.datas) {
 							if (es.datas.Count > 0) {
 								esDatasWithNull = false;
@@ -113,11 +122,6 @@ public class SocketProxy {
 							break;
 						}
 					}
-					break;
-
-				case ZSocketSignal.Signals.Send:
-					es.Send (Sig.Value);
-					yield return null;
 					break;
 
 				case ZSocketSignal.Signals.SendBlock:
