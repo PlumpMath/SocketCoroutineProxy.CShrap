@@ -63,23 +63,22 @@ public class test : MonoBehaviour {
 		ZSocketSignal s = new ZSocketSignal (ZSocketSignal.Signals.Recv);
 C_wait_game_start:
 		do {
-			s = new ZSocketSignal (ZSocketSignal.Signals.Recv);
+			s.Update(ZSocketSignal.Signals.Recv);
 
 			yield return s;
 
 			if (s.Signal != ZSocketSignal.Signals.RecvSuccessful)
 				continue;
-			string[] ds = s.Parse ();
-			Debug.Log("test: " + s.Value + " length is " + s.Value.Length);
-			if (ds [0] != "GAMESTART")
+
+			if (s.Value.Cmd != "GAMESTART")
 				continue;
 
-			meIsL = (ds[1] == "L");
+			meIsL = (s.Value.Args[0] == "L");
+
+			s.Update (ZSocketSignal.Signals.Send, new ProtocolCmd ("HELO", "eycia"));
+			yield return s;
 
 		} while (true);
-
-
-			
 	}
 	
 	// Update is called once per frame

@@ -26,54 +26,53 @@ public class ZSocketSignal {
 		}
 	}
 
-	public string Value {
+	public string ValueString {
 		get {
+			if (realValue == null)
+				return "";
+			return realValue.ToString ();
+		}
+	}
+
+	public ProtocolCmd Value {
+		get {
+			if (realValue == null) {
+				return ProtocolCmd.Null;
+			}
 			return realValue;
 		}
 	}
 
-	private string realValue;
+	private ProtocolCmd realValue;
 	private Signals realSignal;
+
+	public void Update(Signals sig, string cmdAndArg) {
+		realSignal = sig;
+		realValue = ProtocolCmd.Parse (cmdAndArg);
+	}
+
+	public void Update(Signals sig, ProtocolCmd pcmd) {
+		realSignal = sig;
+		realValue = pcmd;
+	}
 
 	public void Update(Signals sig) {
 		realSignal = sig;
-		realValue = "";
-	}
-
-	public void Update(Signals sig, string val) {
-		realSignal = sig;
-		realValue = val;
+		realValue = null;
 	}
 
 	public ZSocketSignal(Signals sig) {
 		realSignal = sig;
-		realValue = "";
+		realValue = null;
 	}
 
-	public ZSocketSignal(Signals sig, string cmd) {
+	public ZSocketSignal(Signals sig, string cmdAndArg) {
 		realSignal = sig;
-		realValue = cmd;
+		realValue = ProtocolCmd.Parse (cmdAndArg);
 	}
 
-	public ZSocketSignal(Signals sig, string cmd, string arg) {
+	public ZSocketSignal(Signals sig, ProtocolCmd pcmd) {
 		realSignal = sig;
-		realValue = cmd + " " + arg;
-	}
-
-	public ZSocketSignal(Signals sig, string cmd, string arg1, string arg2) {
-		realSignal = sig;
-		realValue = cmd + " " + arg1 + " " + arg2;
-	}
-
-	public ZSocketSignal(Signals sig, string cmd, string[] args) {
-		realSignal = sig;
-		realValue = cmd;
-		foreach (string arg in args) {
-			realValue += " " + arg;
-		}
-	}
-
-	public string[] Parse() {
-		return realValue.Split (new string[] { " " }, StringSplitOptions.None);
+		realValue = pcmd;
 	}
 }

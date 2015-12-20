@@ -69,7 +69,7 @@ public class SocketProxy {
 
 				//this should only use for heart beat
 				if (Sig.Signal == ZSocketSignal.Signals.Send) {
-					es.Send (Sig.Value);
+					es.Send (Sig.ValueString);
 					yield return null;
 					continue;
 				}
@@ -125,7 +125,7 @@ public class SocketProxy {
 					break;
 
 				case ZSocketSignal.Signals.SendBlock:
-					es.SendCallback (Sig.Value, SendCallback);
+					es.SendCallback (Sig.ValueString, SendCallback);
 					Sended = false;
 					while (!Sended) {
 						yield return null;

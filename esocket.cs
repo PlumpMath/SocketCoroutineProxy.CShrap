@@ -62,18 +62,13 @@ public class esocket {
 
 	public void Send(string tosnd) {
 		Debug.Log ("esocket start send");
-		byte[] bs = System.Text.Encoding.UTF8.GetBytes (tosnd+"\n");
+		byte[] bs = System.Text.Encoding.UTF8.GetBytes (tosnd+"\r\n");
 		socket.BeginSend(bs, 0, bs.Length, 0, new esocketSendCallback(pass).Callback, socket);
-	}
-
-	public void Send(byte[] tosnd, int offset, int len) {
-		Debug.Log ("esocket start send");
-		socket.BeginSend (tosnd, offset, len, 0, new esocketSendCallback(pass).Callback, socket);
 	}
 
 	public void SendCallback(string tosend, AsyncCallback ac) {
 		Debug.Log ("esocket start send");
-		byte[] bs = System.Text.Encoding.UTF8.GetBytes (tosend+"\n");
+		byte[] bs = System.Text.Encoding.UTF8.GetBytes (tosend+"\r\n");
 		socket.BeginSend(bs, 0, bs.Length, 0, new esocketSendCallback(ac).Callback, socket);
 	}
 
