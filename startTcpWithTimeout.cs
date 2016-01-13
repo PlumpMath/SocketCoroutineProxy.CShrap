@@ -13,10 +13,9 @@ public class startTcpWithTimeout
 	private AsyncCallback acb;
 	private Thread thread;
 
-	void pass(IAsyncResult iar) {
-	}
+	void pass(IAsyncResult iar) {}
 
-	public IAsyncResult BeginConnectWithTimeout(Socket socket, IPEndPoint ip, AsyncCallback acb, object state, int tle) {
+	public IAsyncResult Begin(Socket socket, IPEndPoint ip, AsyncCallback acb, object state, int tle) {
 		this.tle = tle;
 		this.acb = acb;
 
@@ -29,14 +28,14 @@ public class startTcpWithTimeout
 		return result;
 	}
 
-	public IAsyncResult BeginConnectWithTimeout(IPEndPoint ip, AsyncCallback acb, int tle) {
+	public IAsyncResult Begin(IPEndPoint ip, AsyncCallback acb, int tle) {
 		Socket socket = new Socket (AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-		return BeginConnectWithTimeout (socket, ip, acb, socket, tle);
+		return Begin (socket, ip, acb, socket, tle);
 	}
 
-	public IAsyncResult BeginConnectWithTimeout(string ip, int port, AsyncCallback acb, int tle) {
+	public IAsyncResult Begin(string ip, int port, AsyncCallback acb, int tle) {
 		IPEndPoint ipe = new IPEndPoint (IPAddress.Parse (ip), port);
-		return BeginConnectWithTimeout (ipe, acb, tle);
+		return Begin (ipe, acb, tle);
 	}
 
 	public startTcpWithTimeout ()

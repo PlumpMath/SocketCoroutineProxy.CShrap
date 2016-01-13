@@ -56,6 +56,17 @@ public class SocketProxy {
 		}
 	}
 
+	string Recv() {
+		lock (es.datas) {
+			if (es.datas.Count <= 0) {
+				return null;
+			}
+			string data = es.datas.First.Value;
+			es.datas.RemoveFirst ();
+			return data;
+		}
+	}
+
 	public IEnumerator Proxy() {
 		while (true) {
 			if (!ie.MoveNext ()) {
@@ -68,7 +79,7 @@ public class SocketProxy {
 				ZSocketSignal Sig = (ZSocketSignal)yielded;
 
 				//this should only use for heart beat
-				if (Sig.Signal == ZSocketSignal.Signals.Send) {
+				if (Sig.Signal == SocketSignals.Send) {
 					es.Send (Sig.ValueString);
 					yield return null;
 					continue;
@@ -88,50 +99,67 @@ public class SocketProxy {
 				//	yield return null;
 				//	break;
 					
-				case ZSocketSignal.Signals.ConnectBlock:
+				case SocketSignals.ConnectBlock:
 					if (Connected) {
-						Sig.Update (ZSocketSignal.Signals.ConnectSuccessful);
+						Sig.Update (SocketSignals.ConnectSuccessful);
 					} else {
-						Sig.Update (ZSocketSignal.Signals.ConnectFailed);
+						Sig.Update (SocketSignals.ConnectFailed);
 					}
 					break;
 
-				case ZSocketSignal.Signals.Recv:
+				case SocketSignals.SendBlock:
 					if (!Connected) {
-						Sig.Update (ZSocketSignal.Signals.RecvFailed);
+						Sig.Update (SocketSignals.RecvFailed);
 						break;
 					}
 
-					while (true) {
-						bool esDatasWithNull = true;
-						//Debug.Log ("socketproxy Signals.Recv es.datas.Count " + es.datas.Count);
-						lock (es.datas) {
-							if (es.datas.Count > 0) {
-								esDatasWithNull = false;
-							}
-						}
-						if (esDatasWithNull) {
-							yield return null;
-						} else {
-							lock (es.datas) {
-								string data = es.datas.First.Value;
-								es.datas.RemoveFirst ();
-								Sig.Update (ZSocketSignal.Signals.RecvSuccessful, data);
-								//Callback (new ZSocketSignal (ZSocketSignal.Signals.Recv, data));
-							}
-							break;
-						}
-					}
-					break;
-
-				case ZSocketSignal.Signals.SendBlock:
 					es.SendCallback (Sig.ValueString, SendCallback);
 					Sended = false;
 					while (!Sended) {
 						yield return null;
 					}
+					Sig.Update (SocketSignals.SendSuccessful);
+					break;
+				
+				case SocketSignals.Recv:
+					if (!Connected) {
+						Sig.Update (SocketSignals.RecvFailed);
+						break;
+					}
+
+					while (true) {
+						string recv = Recv ();
+						if (recv != null) {
+							Sig.Update (SocketSignals.RecvSuccessful, recv);
+							break;
+						}
+						yield return null;
+					}
+					break;
+
+				case SocketSignals.SendAndRecv:
+					if (!Connected) {
+						Sig.Update (SocketSignals.RecvFailed);
+						break;
+					}
+
+					es.SendCallback (Sig.ValueString, SendCallback);
+					Sended = false;
+					while (!Sended) {
+						yield return null;
+					}
+					while (true) {
+						string recv = Recv ();
+						if (recv != null) {
+							Sig.Update (SocketSignals.SendAndRecvSuccessful, recv);
+							break;
+						}
+						yield return null;
+					}
 					break;
 				}
+
+				
 			} else {
 				yield return yielded;
 			}

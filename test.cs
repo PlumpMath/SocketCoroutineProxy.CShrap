@@ -60,14 +60,14 @@ public class test : MonoBehaviour {
 	public bool meIsL;
 
 	IEnumerator rs() {
-		ZSocketSignal s = new ZSocketSignal (ZSocketSignal.Signals.Recv);
+		ZSocketSignal s = new ZSocketSignal (SocketSignals.Recv);
 C_wait_game_start:
 		do {
-			s.Update(ZSocketSignal.Signals.Recv);
+			s.Update(SocketSignals.Recv);
 
 			yield return s;
 
-			if (s.Signal != ZSocketSignal.Signals.RecvSuccessful)
+			if (s.Signal != SocketSignals.RecvSuccessful)
 				continue;
 
 			if (s.Value.Cmd != "GAMESTART")
@@ -75,7 +75,7 @@ C_wait_game_start:
 
 			meIsL = (s.Value.Args[0] == "L");
 
-			s.Update (ZSocketSignal.Signals.Send, new ProtocolCmd ("HELO", "eycia"));
+			s.Update (SocketSignals.Send, new ProtocolCmd ("HELO", "eycia"));
 			yield return s;
 
 		} while (true);

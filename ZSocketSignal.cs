@@ -3,24 +3,7 @@ using System.Collections;
 using System;
 
 public class ZSocketSignal {
-	public enum Signals
-	{
-		ConnectFailed,
-		ConnectSuccessful,
-		RecvSuccessful,
-		RecvFailed,
-		SendSuccessful,
-		SendFailed,
-		Dead,
-
-		Connect,
-		ConnectBlock,
-		Recv,
-		Send,
-		SendBlock
-	}
-
-	public Signals Signal {
+	public SocketSignals Signal {
 		get {
 			return realSignal;
 		}
@@ -44,34 +27,34 @@ public class ZSocketSignal {
 	}
 
 	private ProtocolCmd realValue;
-	private Signals realSignal;
+	private SocketSignals realSignal;
 
-	public void Update(Signals sig, string cmdAndArg) {
+	public void Update(SocketSignals sig, string cmdAndArg) {
 		realSignal = sig;
 		realValue = ProtocolCmd.Parse (cmdAndArg);
 	}
 
-	public void Update(Signals sig, ProtocolCmd pcmd) {
+	public void Update(SocketSignals sig, ProtocolCmd pcmd) {
 		realSignal = sig;
 		realValue = pcmd;
 	}
 
-	public void Update(Signals sig) {
+	public void Update(SocketSignals sig) {
 		realSignal = sig;
 		realValue = null;
 	}
 
-	public ZSocketSignal(Signals sig) {
+	public ZSocketSignal(SocketSignals sig) {
 		realSignal = sig;
 		realValue = null;
 	}
 
-	public ZSocketSignal(Signals sig, string cmdAndArg) {
+	public ZSocketSignal(SocketSignals sig, string cmdAndArg) {
 		realSignal = sig;
 		realValue = ProtocolCmd.Parse (cmdAndArg);
 	}
 
-	public ZSocketSignal(Signals sig, ProtocolCmd pcmd) {
+	public ZSocketSignal(SocketSignals sig, ProtocolCmd pcmd) {
 		realSignal = sig;
 		realValue = pcmd;
 	}

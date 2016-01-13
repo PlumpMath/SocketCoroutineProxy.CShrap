@@ -29,13 +29,13 @@ public class esocket {
 	private string ip;
 	private int port;
 
-	private bool RecvRunning;
+	private bool RecvRunning = false;
 
 	public IAsyncResult BeginConnect(AsyncCallback IFinished) {
 		Debug.Log ("esocket start connect");
 		if (socket == null) {
 			CFinished = IFinished;
-			return new startTcpWithTimeout ().BeginConnectWithTimeout (ip, port, FinishConnect, 2000);
+			return new startTcpWithTimeout ().Begin (ip, port, FinishConnect, 2000);
 		}
 		AsyncAlreadyCompleted result = new AsyncAlreadyCompleted (socket);
 		CFinished (result);
