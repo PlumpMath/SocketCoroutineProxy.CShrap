@@ -2,6 +2,7 @@
 using System.Collections;
 using System;
 using System.Net.Sockets;
+using System.Collections.Generic;
 
 // scripts access esocket coroutinely via this script
 // proxy socket from async to coroutine
@@ -13,7 +14,8 @@ public class SocketProxy {
 
 	private IEnumerator ie;
 	public  esocket es;
-	//private SocketCallback Callback;
+
+	private Stack<IEnumerator> _ie_stack;
 
 	public delegate void SocketCallback(ZSocketSignal zsc);
 
@@ -30,6 +32,19 @@ public class SocketProxy {
 		this.ie = ie;
 		//this.Callback = Callback;
 		this.es = es;
+	}
+
+	void SwitchIEnumberable(IEnumerator ie) {
+		this.ie = ie;
+	}
+
+	void SwitchIEnumberableStackly(IEnumerator ie) {
+		_ie_stack.Push (this.ie);
+		this.ie = ie;
+	}
+
+	void SwitchIEnumberableStacklyBack() {
+		this.ie = _ie_stack.Pop ();
 	}
 
 	void SendCallback(IAsyncResult iar) {
@@ -74,6 +89,16 @@ public class SocketProxy {
 			}
 
 			object yielded = ie.Current;
+
+			if (yielded != null && yielded.GetType () == typeof(Call)) {
+				SwitchIEnumberableStackly (((Call)(yielded)).ie);
+				yield return null;
+			}
+
+			if (yielded != null && yielded.GetType () == typeof(Return)) {
+				SwitchIEnumberableStacklyBack ();
+				yield return null;
+			}
 
 			if (yielded != null && yielded.GetType () == typeof(ZSocketSignal)) {
 				ZSocketSignal Sig = (ZSocketSignal)yielded;
